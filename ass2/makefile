@@ -1,2 +1,2 @@
 all: 
-	gcc -Wall -Wextra -O2 main.c -o fib
+	gcc -Wall -Wextra -O2 -std=c99 main.c -o fib
