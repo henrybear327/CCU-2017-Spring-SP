@@ -15,8 +15,8 @@ int main()
     }
 
     // print the results out on the screen
-    for (int i = 0; i < 90; i++)
-        printf("%3d = %18lld\n", i + 1,
+    for (int i = 0; i <= 90; i++)
+        printf("%3d = %18lld\n", i,
                data[i]); // align the output for better result displaying
 
     return 0;
