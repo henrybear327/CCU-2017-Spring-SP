@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <assert.h>
+#include <sys/file.h>
 
 const int MAX_N = 10000;
 
@@ -49,22 +50,42 @@ int main()
 		printf(RED "%s" NONE, toWrite);
 #endif
 
-		// acquire lock
-
-		// write to file
-		int outputFile = open("grade", O_WRONLY | O_CREAT | O_APPEND, S_IRUSR| S_IWUSR);
-		if(outputFile == -1) {
+		// open file
+		printf("Opening file....\n");
+		int outputFilefd = open("grade", O_WRONLY | O_CREAT | O_APPEND, S_IRUSR| S_IWUSR);
+		if(outputFilefd == -1) {
 			perror("output file open() error");
 			return EXIT_FAILURE;
 		}
 
-		int writingByte = write(outputFile, toWrite, sizeof(toWrite));
+		// acquire lock
+		printf("Acquiring file lock....\n");
+		int acquireRet = flock(outputFilefd, LOCK_EX);
+		printf(GREEN "%d\n" NONE, acquireRet);
+		if(acquireRet == -1) {
+			perror("acquire lock flock() error");
+			return EXIT_FAILURE;
+		}
+		
+		// write data
+		printf("Writing to file....\n");
+		int writingByte = write(outputFilefd, toWrite, sizeof(toWrite));
 		if(writingByte == -1) {
 			perror("write() error");
 			return EXIT_FAILURE;
 		}
 
-		if(close(outputFile)) {
+		// release lock
+		printf("Releasing lock....\n");
+		int releaseRet = flock(outputFilefd, LOCK_UN);
+		if(releaseRet == -1) {
+			perror("release lock flock() error");
+			return EXIT_FAILURE;
+		}
+		
+		// close file
+		printf("Closing file....\n");
+		if(close(outputFilefd)) {
 			perror("close() error");
 			return EXIT_FAILURE;
 		}	
