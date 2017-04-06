@@ -49,6 +49,8 @@ int main()
 		printf(RED "%s" NONE, toWrite);
 #endif
 
+		// acquire lock
+
 		// write to file
 		int outputFile = open("grade", O_WRONLY | O_CREAT | O_APPEND, S_IRUSR| S_IWUSR);
 		if(outputFile == -1) {
@@ -61,6 +63,11 @@ int main()
 			perror("write() error");
 			return EXIT_FAILURE;
 		}
+
+		if(close(outputFile)) {
+			perror("close() error");
+			return EXIT_FAILURE;
+		}	
 	}
 
 	return 0;
