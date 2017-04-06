@@ -2,6 +2,7 @@
 
 ```
 docker build -t="sp" --rm  - < Dockerfile
+docker build -t="sp1" --no-cache --rm  - < Dockerfile // http://mmbash.de/blog/failed-fetch-with-docker-build-and-apt-get-update/
 
 docker ps -a
 docker images -a
