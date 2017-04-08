@@ -10,7 +10,7 @@ RUN apt-get install sudo
 RUN adduser --disabled-password --gecos "" ubuntu
 RUN echo "ubuntu:ubuntu" | chpasswd
 RUN usermod -aG sudo ubuntu
-RUN apt-get install -y openssh-server vim apt-utils git wget curl strace build-essential screen 
+RUN apt-get install -y openssh-server vim apt-utils git wget curl strace build-essential screen man
 RUN mkdir /var/run/sshd
 
 EXPOSE 22
