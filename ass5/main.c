@@ -23,17 +23,17 @@ int main(int argc, char** argv)
 
 	// open file from designated location
 	printf(GREEN "Opening file1....\n" NONE);
-	int file1fd = open(argv[1], O_WRONLY | O_CREAT | O_APPEND, S_IRUSR| S_IWUSR);
+	int file1fd = open(argv[1], O_RDONLY, S_IRUSR| S_IWUSR);
 	if(file1fd == -1) {
 		perror("output file open() error");
 		return EXIT_FAILURE;
 	}
 
 	// copy to tmp file	
-	printf(GREEN "Opening tmp file....\n" NONE);
-	int tmpfd = open(argv[1], O_WRONLY | O_CREAT | O_APPEND, S_IRUSR| S_IWUSR);
+	printf(GREEN "Creating tmpFile file....\n" NONE);
+	int tmpfd = open("tmpFile", O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR| S_IWUSR);
 	if(tmpfd == -1) {
-		perror("output file open() error");
+		perror("tmpFile open() error");
 		return EXIT_FAILURE;
 	}
 
@@ -43,6 +43,9 @@ int main(int argc, char** argv)
 		if(readRet == -1) {
 			perror("read() error");
 			return EXIT_FAILURE;
+		} else if(readRet == 0) {
+			printf(GREEN "file1 is copied to tmp file\n" NONE);
+			break;
 		}
 
 		int writeRet = write(tmpfd, buffer, readRet);
@@ -52,10 +55,16 @@ int main(int argc, char** argv)
 		}
 	}
 
-
 	// press to continue
+	printf(CYAN "\n\n\nPlease check for the tmpFile!\nPress any key to continue...\n\n\n" NONE);
+	getchar();
 
 	// move tmp file to designated location
+	char command[10000];
+	strcat(command, "mv tmpFile ");
+	strcat(command, argv[2]);
+	system(command);
+	printf(GREEN "Done with copying!!\n" NONE);
 
 	// close
 	close(file1fd);
