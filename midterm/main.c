@@ -24,17 +24,21 @@ typedef struct {
     char *pathname;
 } MyInotifyData;
 
-typedef struct {
-    char *directoryName;
-} MyDirectoryData;
-
 int inotifyDataIdx;
 int inotifyDataCapacity;
 MyInotifyData *inotifyData;
 
+typedef struct {
+    char *directoryName;
+} MyDirectoryData;
+
 int directoryDataIdx;
 int directoryDataCapacity;
 MyDirectoryData *directoryData;
+
+int queueDataIdx;
+int queueDataCapacity;
+MyDirectoryData *queueData;
 
 void saveInotifyFileDescriptor(int fd, char *pathname)
 {
@@ -85,6 +89,30 @@ void saveDirectoryArgument(char *pathname)
     directoryDataIdx++;
 }
 
+void addDirectoryToQueue(char *pathname)
+{
+    if (queueData == NULL) {
+        queueDataCapacity = 1;
+        queueData =
+            (MyDirectoryData *)malloc(sizeof(MyDirectoryData) * queueDataCapacity);
+    } else {
+        if (queueDataIdx >= queueDataCapacity) {
+            queueDataCapacity *= 2;
+            MyDirectoryData *newData = (MyDirectoryData *)malloc(
+                                           sizeof(MyDirectoryData) * queueDataCapacity);
+            memcpy(newData, queueData,
+                   sizeof(MyDirectoryData) * queueDataCapacity / 2);
+            free(queueData);
+            queueData = newData;
+        }
+    }
+
+    queueData[queueDataIdx].directoryName =
+        (char *)malloc(sizeof(char) * (strlen(pathname) + 2));
+    strcpy(queueData[queueDataIdx].directoryName, pathname);
+    queueDataIdx++;
+}
+
 int addInotifyToPath(char *pathname, int topLevelfd)
 {
     // printf(GREEN "Listen for path = %s\n" NONE, pathname);
@@ -128,23 +156,25 @@ int isDirectory(char *pathname)
     return 0;
 }
 
-void search(char *pathname, int fd)
+void search(char *pathname, int isTopLevel)
 {
-    if (fd == -1) {
+    if (isTopLevel == 1) {
         // one first invokation of recursive search, check if this is a directory
         if (isDirectory(pathname) == 1) {
             // add the argument name into list, and keep on searching!
-            printf(CYAN "Argument is a folder!\n" NONE);
+            // printf(CYAN "Argument is a folder!\n" NONE);
             saveDirectoryArgument(pathname);
         } else {
             // file, add inotify directly, and return
-            printf(CYAN "Argument is a file!\n" NONE);
-            addInotifyToPath(pathname, -1);
+            // printf(CYAN "Argument is a file!\n" NONE);
+            addDirectoryToQueue(pathname);
             return;
         }
     }
+    isTopLevel = 0;
+    addDirectoryToQueue(pathname);
 
-    printf(CYAN "Now searching under path %s\n" NONE, pathname);
+    // printf(CYAN "Now searching under path %s\n" NONE, pathname);
     DIR *dp = opendir(pathname);
     if (dp == NULL) {
         perror("opendir() error");
@@ -196,15 +226,9 @@ void search(char *pathname, int fd)
     }
 
     // recursively go to directory
-    // all folders under top level one shares inotifier
-    if (fd == -1)
-        fd = addInotifyToPath(pathname, -1);
-    else
-        addInotifyToPath(pathname, fd);
-
     for (int i = 0; i < dirPathListIdx; i++) {
         // printf(GREEN "Going to directory %s\n", dirPathList[i]);
-        search(dirPathList[i], fd);
+        search(dirPathList[i], isTopLevel);
     }
 
     closedir(dp);
@@ -300,9 +324,26 @@ void listenForInotifyEvents()
                     printf("NULL\n");
 
                 p += sizeof(struct inotify_event) + event->len;
+                fflush(stdout);
             }
         }
     }
+}
+
+void attachListener()
+{
+    int fd = -1;
+    for (int i = 0; i < queueDataIdx; i++) {
+        char *pathname = queueData[i].directoryName;
+        if (fd == -1)
+            fd = addInotifyToPath(pathname, -1);
+        else
+            addInotifyToPath(pathname, fd);
+    }
+    free(queueData);
+    queueData = NULL;
+    queueDataIdx = 0;
+    queueDataCapacity = 0;
 }
 
 int main(int argc, char **argv)
@@ -318,8 +359,12 @@ int main(int argc, char **argv)
     directoryData = NULL;
     directoryDataIdx = directoryDataCapacity = 0;
 
+    queueData = NULL;
+    queueDataIdx = queueDataCapacity = 0;
+
     for (int i = 1; i < argc; i++) {
-        search(argv[i], -1);
+        search(argv[i], 1);
+        attachListener();
     }
 
     listenForInotifyEvents();

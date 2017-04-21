@@ -1,0 +1,30 @@
+DIR: ./ch06 ./ch08 ./ch13
+[./ch06] {IN_OPEN, IN_ISDIR, }cookie=0 name = NULL
+[./ch06] {IN_ACCESS, IN_ISDIR, }cookie=0 name = NULL
+[./ch06] {IN_CLOSE_NOWRITE, IN_CLOSE, IN_ISDIR, }cookie=0 name = NULL
+[./ch08] {IN_OPEN, IN_ISDIR, }cookie=0 name = NULL
+[./ch13] {IN_OPEN, IN_ISDIR, }cookie=0 name = NULL
+[./ch06] {IN_OPEN, IN_ISDIR, }cookie=0 name = NULL
+[./ch06] {IN_ACCESS, IN_ISDIR, }cookie=0 name = NULL
+[./ch06] {IN_CLOSE_NOWRITE, IN_CLOSE, IN_ISDIR, }cookie=0 name = NULL
+[./ch08] {IN_ACCESS, IN_ISDIR, }cookie=0 name = NULL
+[./ch08] {IN_CLOSE_NOWRITE, IN_CLOSE, IN_ISDIR, }cookie=0 name = NULL
+[./ch13] {IN_ACCESS, IN_ISDIR, }cookie=0 name = NULL
+[./ch13] {IN_OPEN, IN_ISDIR, }cookie=0 name = b
+[./ch13] {IN_OPEN, IN_ISDIR, }cookie=0 name = NULL
+[./ch13] {IN_ACCESS, IN_ISDIR, }cookie=0 name = b
+[./ch13] {IN_ACCESS, IN_ISDIR, }cookie=0 name = NULL
+[./ch13] {IN_OPEN, IN_ISDIR, }cookie=0 name = c
+[./ch13] {IN_OPEN, IN_ISDIR, }cookie=0 name = NULL
+[./ch13] {IN_ACCESS, IN_ISDIR, }cookie=0 name = c
+[./ch13] {IN_ACCESS, IN_ISDIR, }cookie=0 name = NULL
+[./ch13] {IN_ACCESS, IN_ISDIR, }cookie=0 name = c
+[./ch13] {IN_ACCESS, IN_ISDIR, }cookie=0 name = NULL
+[./ch13] {IN_CLOSE_NOWRITE, IN_CLOSE, IN_ISDIR, }cookie=0 name = c
+[./ch13] {IN_CLOSE_NOWRITE, IN_CLOSE, IN_ISDIR, }cookie=0 name = NULL
+[./ch13] {IN_ACCESS, IN_ISDIR, }cookie=0 name = b
+[./ch13] {IN_ACCESS, IN_ISDIR, }cookie=0 name = NULL
+[./ch13] {IN_CLOSE_NOWRITE, IN_CLOSE, IN_ISDIR, }cookie=0 name = b
+[./ch13] {IN_CLOSE_NOWRITE, IN_CLOSE, IN_ISDIR, }cookie=0 name = NULL
+[./ch13] {IN_ACCESS, IN_ISDIR, }cookie=0 name = NULL
+[./ch13] {IN_CLOSE_NOWRITE, IN_CLOSE, IN_ISDIR, }cookie=0 name = NULL
