@@ -79,8 +79,6 @@ void addInotifyToDirectory(char *pathname)
 
 void listDirectory(char *pathname)
 {
-    addInotifyToDirectory(pathname);
-
     DIR *dp = opendir(pathname);
     if (dp == NULL) {
         perror("opendir() error");
@@ -145,6 +143,8 @@ void listDirectory(char *pathname)
     }
 
     closedir(dp);
+
+	addInotifyToDirectory(pathname);
 }
 
 void listenForInotifyEvents()
@@ -175,7 +175,7 @@ void listenForInotifyEvents()
             if (num == 0) // no event
                 continue;
 
-            printf(CYAN "Printing inotify data for %s\n" NONE,
+            printf(CYAN "Printing inotify events for %s\n" NONE,
                    inotifyData[i].pathname);
             for (char *p = buf; p < buf + num;) {
                 struct inotify_event *event = (struct inotify_event *)p;
