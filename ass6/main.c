@@ -33,7 +33,7 @@ void listDirectory(char *pathName)
 		return;
 	}
 
-	Dirent *dptr = readdir(dp);
+	Dirent *dptr = readdir(dp); // obtain directory entry struct
 	if (dptr == NULL && errno != 0) {
 		perror("readdir() error");
 		return;
@@ -47,12 +47,12 @@ void listDirectory(char *pathName)
 	int dirPathListIdx = 0;
 	char dirPathList[100][512];
 
-	// print out files in the current directory
+	// print out files in the current directory using directory entry struct
 	while (dptr != NULL) {
 		// printf("%s\n", dptr->d_name); // file name
 		strcpy(fileNameList[fileNameListIdx++], dptr->d_name);
 		
-		// setup info for stat()
+		// setup info for stat() to use
 		char toQueryPathName[512];
 		strcpy(toQueryPathName, pathName);
 		strcat(toQueryPathName, "/");  // don't forget the /
@@ -76,7 +76,7 @@ void listDirectory(char *pathName)
 		dptr = readdir(dp); // go to next file
 	}
 
-	// sort file list and print then
+	// sort file list and print them
 	printf(GREEN "%s:\n" NONE, pathName);
 	qsort(fileNameList, fileNameListIdx, sizeof(char) * 256, cmp);
 	for(int i = 0; i < fileNameListIdx; i++) {
@@ -86,6 +86,7 @@ void listDirectory(char *pathName)
 	// recursively go to directory
 	for(int i = 0; i < dirPathListIdx; i++) {
 		printf(GREEN "Going to directory %s\n", dirPathList[i]);
+		listDirectory(dirPathList[i]);
 	}
 
 	closedir(dp);
