@@ -1,0 +1,189 @@
+#include <ctype.h>
+#include <dirent.h>
+#include <grp.h>
+#include <pwd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <time.h>
+
+#define _GNU_SOURCE
+
+typedef struct {
+  char isdir;
+  char permis[11];
+  int hlink;
+  char *uname;
+  char *gname;
+  int size;
+  char *lasttime;
+  char *name;
+
+} opt;
+
+int cmp(const void *A, const void *B) {
+  if (!strcmp((*(opt *)A).name, (char *)"."))
+    return 0;
+  else if (!strcmp((*(opt *)B).name, (char *)"."))
+    return 1;
+  if (!strcmp((*(opt *)A).name, (char *)".."))
+    return 0;
+  else if (!strcmp((*(opt *)B).name, (char *)".."))
+    return 1;
+  if ((*(opt *)A).isdir == 'd' && (*(opt *)B).isdir == '-')
+    return 1;
+  int length = sizeof((*(opt *)A).name) < sizeof((*(opt *)B).name)
+                   ? sizeof((*(opt *)A).name)
+                   : sizeof((*(opt *)B).name);
+  for (int i = 0; i < length; i++) {
+    char a = tolower(((*(opt *)A).name)[i]);
+    char b = tolower(((*(opt *)B).name)[i]);
+    if (a < b)
+      return 0;
+    else if (a > b)
+      return 1;
+  }
+  if (sizeof((*(opt *)A).name) > sizeof((*(opt *)B).name))
+    return 1;
+  return 0;
+}
+void rec(char *inp) {
+  printf("%s:\n", inp);
+  DIR *dir;
+  struct dirent *ent;
+  char pathname[512];
+  struct stat buf;
+  int perm;
+
+  opt *data = (opt *)malloc(sizeof(opt));
+  int cnt = 0;
+  int Max = 1;
+
+  dir = opendir(inp);
+  ent = readdir(dir);
+  while (ent != NULL) {
+    if (cnt == Max) {
+      Max <<= 1;
+      opt *newdata = (opt *)malloc(sizeof(opt) * Max);
+      memcpy(newdata, data, sizeof(opt) * cnt);
+      free(data);
+      data = newdata;
+    }
+
+    strcpy(pathname, inp);
+    data[cnt].name = (char *)malloc(sizeof(char) * (strlen(ent->d_name) + 2));
+    strcpy(data[cnt].name, ent->d_name);
+    strcat(pathname, data[cnt].name);
+    stat(pathname, &buf);
+
+    perm = (buf.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO));
+    for (int i = 8; i >= 0; i--) {
+      char fill;
+      switch (i % 3) {
+      case 0:
+        fill = 'r';
+        break;
+      case 1:
+        fill = 'w';
+        break;
+      case 2:
+        fill = 'x';
+        break;
+      }
+      if (perm & 1)
+        data[cnt].permis[i] = fill;
+      else
+        data[cnt].permis[i] = '-';
+      perm >>= 1;
+    }
+    data[cnt].permis[9] = '.';
+    data[cnt].permis[10] = '\0';
+
+    data[cnt].hlink = buf.st_nlink;
+
+    data[cnt].lasttime =
+        (char *)malloc(sizeof(char) * strlen(ctime(&buf.st_atime)));
+    strcpy(data[cnt].lasttime, ctime(&buf.st_atime));
+    data[cnt].lasttime[strlen(data[cnt].lasttime) - 1] = 0;
+
+    if (S_ISDIR(buf.st_mode))
+      data[cnt].isdir = 'd';
+    else
+      data[cnt].isdir = '-';
+
+    data[cnt].uname =
+        (char *)malloc(sizeof(char) * strlen(getpwuid(buf.st_uid)->pw_name));
+    strcpy(data[cnt].uname, getpwuid(buf.st_uid)->pw_name);
+    data[cnt].gname =
+        (char *)malloc(sizeof(char) * strlen(getgrgid(buf.st_gid)->gr_name));
+    strcpy(data[cnt].gname, getgrgid(buf.st_gid)->gr_name);
+    data[cnt].size = (int)buf.st_size;
+
+    ent = readdir(dir);
+
+    ++cnt;
+    // if(cnt==19)
+    // for(int i = 0; i < cnt; i++)
+    // printf("%c%s  %s  %s %8d %s %s\n", data[i].isdir, data[i].permis,
+    // data[i].uname, data[i].gname, data[i].size, data[i].lasttime,
+    // data[i].name);
+  }
+  closedir(dir);
+
+  qsort(data, cnt, sizeof(opt), cmp);
+
+  // for(int i = 0; i < cnt; i++)
+  // printf("%c%s  %s  %s %8d %s %s\n", data[i].isdir, data[i].permis,
+  // data[i].uname, data[i].gname, data[i].size, data[i].lasttime,
+  // data[i].name);
+
+  int optcnt = 0;
+
+  while (optcnt < cnt) {
+    if (data[optcnt].isdir == 'd' && strcmp(data[optcnt].name, ".") &&
+        strcmp(data[optcnt].name, "..")) {
+      printf("\n\n");
+      // printf("%s", data[cnt].name);
+      char *next = (char *)malloc(sizeof(char) * strlen(inp) + 2);
+      strcpy(next, inp);
+      printf("%s\n", data[optcnt].name);
+      strcat(next, data[optcnt].name);
+      free(data[optcnt].name);
+      free(data[optcnt].uname);
+      free(data[optcnt].gname);
+      free(data[optcnt].lasttime);
+      strcat(next, "/");
+      rec(next);
+      free(next);
+
+      // for(int i = 0; i < cnt; i++)
+      // printf("%c%s  %s  %s %8d %s %s\n", data[i].isdir, data[i].permis,
+      // data[i].uname, data[i].gname, data[i].size, data[i].lasttime,
+      // data[i].name);
+
+    } else {
+      printf("%c%s  %s  %s %8d %s %s\n", data[optcnt].isdir,
+             data[optcnt].permis, data[optcnt].uname, data[optcnt].gname,
+             data[optcnt].size, data[optcnt].lasttime, data[optcnt].name);
+      free(data[optcnt].name);
+      free(data[optcnt].uname);
+      free(data[optcnt].gname);
+      free(data[optcnt].lasttime);
+    }
+
+    ++optcnt;
+  }
+  //├──
+  free(data);
+  return;
+}
+int main(int argc, char **argv) {
+  if (argc != 2) {
+    perror("You Should enter exactly 1 argument!\n");
+    return 0;
+  }
+  rec(argv[1]);
+  return 0;
+}
