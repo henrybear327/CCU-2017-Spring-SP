@@ -25,7 +25,7 @@ typedef struct {
 } MyInotifyData;
 
 typedef struct {
-	char *directoryName;
+    char *directoryName;
 } MyDirectoryData;
 
 int inotifyDataIdx;
@@ -65,13 +65,13 @@ void saveDirectoryArgument(char *pathname)
 {
     if (directoryData == NULL) {
         directoryDataCapacity = 1;
-        directoryData =
-            (MyDirectoryData *)malloc(sizeof(MyDirectoryData) * directoryDataCapacity);
+        directoryData = (MyDirectoryData *)malloc(sizeof(MyDirectoryData) *
+                        directoryDataCapacity);
     } else {
         if (directoryDataIdx >= directoryDataCapacity) {
             directoryDataCapacity *= 2;
-            MyDirectoryData *newData =
-                (MyDirectoryData *)malloc(sizeof(MyDirectoryData) * directoryDataCapacity);
+            MyDirectoryData *newData = (MyDirectoryData *)malloc(
+                                           sizeof(MyDirectoryData) * directoryDataCapacity);
             memcpy(newData, directoryData,
                    sizeof(MyDirectoryData) * directoryDataCapacity / 2);
             free(directoryData);
@@ -85,66 +85,69 @@ void saveDirectoryArgument(char *pathname)
     directoryDataIdx++;
 }
 
-int addInotifyToDirectory(char *pathname, int topLevelfd)
+int addInotifyToPath(char *pathname, int topLevelfd)
 {
-	// printf(GREEN "Listen for path = %s\n" NONE, pathname);
+    // printf(GREEN "Listen for path = %s\n" NONE, pathname);
 
-	// printf("in %s %d\n", pathname, topLevelfd);
+    // printf("in %s %d\n", pathname, topLevelfd);
 
-	if(topLevelfd == -1) {
-		// create a new inotify instance
-	    int fd = inotify_init();
-	    if (fd == -1) {
-	        perror("inotify_init() error");
-	        exit(-1);
-	    }
-		saveInotifyFileDescriptor(fd, pathname);
+    if (topLevelfd == -1) {
+        // create a new inotify instance
+        int fd = inotify_init();
+        if (fd == -1) {
+            perror("inotify_init() error");
+            exit(-1);
+        }
+        saveInotifyFileDescriptor(fd, pathname);
 
-		topLevelfd = fd;
-		// printf("in1 %s %d\n", pathname, topLevelfd);
-	}
+        topLevelfd = fd;
+        // printf("in1 %s %d\n", pathname, topLevelfd);
+    }
 
-
-	// attach
+    // attach
     int watch = inotify_add_watch(topLevelfd, pathname, IN_ALL_EVENTS);
     if (watch == -1) {
         perror("inotify_add_watch() error");
         exit(-1);
     }
-	// printf("out %s %d\n", pathname, topLevelfd);
+    // printf("out %s %d\n", pathname, topLevelfd);
 
-	return topLevelfd;
+    return topLevelfd;
 }
 
 int isDirectory(char *pathname)
 {
-	struct stat buf;
-	if (stat(pathname, &buf) != 0) {
-		perror("stat() error");
-		exit(-1);
-	}
+    struct stat buf;
+    if (stat(pathname, &buf) != 0) {
+        perror("stat() error");
+        exit(-1);
+    }
 
-	if (S_ISDIR(buf.st_mode))
-		return 1;
-	return 0;
+    if (S_ISDIR(buf.st_mode))
+        return 1;
+    return 0;
 }
 
 void search(char *pathname, int fd)
 {
-	if(isDirectory(pathname) == 1) {
-		printf(CYAN "Argument is a folder!\n" NONE);
-		saveDirectoryArgument(pathname);
-	} else {
-		// file, add inotify directly
-		printf(CYAN "Argument is a file!\n" NONE);
-		addInotifyToDirectory(pathname, -1);
-		return;
-	}
+    if (fd == -1) {
+        // one first invokation of recursive search, check if this is a directory
+        if (isDirectory(pathname) == 1) {
+            // add the argument name into list, and keep on searching!
+            printf(CYAN "Argument is a folder!\n" NONE);
+            saveDirectoryArgument(pathname);
+        } else {
+            // file, add inotify directly, and return
+            printf(CYAN "Argument is a file!\n" NONE);
+            addInotifyToPath(pathname, -1);
+            return;
+        }
+    }
 
-	printf(CYAN "Now searching under path %s\n" NONE, pathname);
+    printf(CYAN "Now searching under path %s\n" NONE, pathname);
     DIR *dp = opendir(pathname);
     if (dp == NULL) {
-		perror("opendir() error");
+        perror("opendir() error");
         exit(-1);
     }
 
@@ -193,11 +196,11 @@ void search(char *pathname, int fd)
     }
 
     // recursively go to directory
-	// all folders under top level one shares inotifier
-	if(fd == -1)
-		fd = addInotifyToDirectory(pathname, -1);
-	else
-		addInotifyToDirectory(pathname, fd);
+    // all folders under top level one shares inotifier
+    if (fd == -1)
+        fd = addInotifyToPath(pathname, -1);
+    else
+        addInotifyToPath(pathname, fd);
 
     for (int i = 0; i < dirPathListIdx; i++) {
         // printf(GREEN "Going to directory %s\n", dirPathList[i]);
@@ -209,11 +212,11 @@ void search(char *pathname, int fd)
 
 void listenForInotifyEvents()
 {
-	printf("DIR:");
-	for(int i = 0; i < directoryDataIdx; i++) {
-		printf(" %s", directoryData[i].directoryName);
-	}
-	printf("\n");
+    printf("DIR:");
+    for (int i = 0; i < directoryDataIdx; i++) {
+        printf(" %s", directoryData[i].directoryName);
+    }
+    printf("\n");
 
     while (1) {
         for (int i = 0; i < inotifyDataIdx; i++) {
@@ -306,14 +309,14 @@ int main(int argc, char **argv)
 {
     if (argc == 1) {
         printf(RED "Please supply at least one directory for this program\n" NONE);
-		exit(1);
+        exit(1);
     }
 
     inotifyData = NULL;
     inotifyDataIdx = inotifyDataCapacity = 0;
 
-	directoryData = NULL;
-	directoryDataIdx = directoryDataCapacity = 0;
+    directoryData = NULL;
+    directoryDataIdx = directoryDataCapacity = 0;
 
     for (int i = 1; i < argc; i++) {
         search(argv[i], -1);
