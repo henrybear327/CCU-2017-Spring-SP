@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <poll.h>
 
 #define BUF_LEN 100000
 
@@ -148,10 +149,22 @@ void listDirectory(char *pathname)
 
 void listenForInotifyEvents()
 {
-	printf("\n\n");
+    printf("\n\n");
     while (1) {
         for (int i = 0; i < inotifyDataIdx; i++) {
-            int fd = inotifyData[i].fd;
+			int fd = inotifyData[i].fd;
+
+            // use polling to avoid read blocking
+            struct pollfd pfd = {fd, POLLIN, 0};
+            int pollRet = poll(&pfd, 1, 50); // timeout of 50ms
+            if (pollRet < 0) {
+                perror("poll() error");
+				exit(-1);
+            } else if (pollRet == 0) {
+                // Timeout with no events, move on.
+				continue;
+            }
+
             char buf[BUF_LEN];
             int num = read(fd, buf, BUF_LEN);
             if (num < 0) {
@@ -193,7 +206,7 @@ void listenForInotifyEvents()
                     puts("IN_OPEN");
                 else {
                     printf(RED "Unrecognized event\n" NONE);
-					printf(RED "mask = %o\n" NONE, event->mask);
+                    printf(RED "mask = %o\n" NONE, event->mask);
                 }
 
                 if (event->len > 0)

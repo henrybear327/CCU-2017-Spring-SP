@@ -142,21 +142,24 @@ void listDirectory(char *pathname) {
   closedir(dp);
 }
 
-int main(int argc, char **argv) {
-  if (argc != 2) {
-    printf(RED "Please supply one directory for this program to work\n" NONE);
-    return 1;
-  }
-
-  inotifyData = NULL;
-  inotifyDataIdx = inotifyDataCapacity = 0;
-
-  printf(GREEN "Will be monitoring directory %s\n\n" NONE, argv[1]);
-  listDirectory(argv[1]);
-
+void listenForInotifyEvents() {
   printf("\n\n");
   while (1) {
     for (int i = 0; i < inotifyDataIdx; i++) {
+      // use polling to avoid read blocking
+      struct pollfd pfd = {fd, POLLIN, 0};
+      int ret = poll(&pfd, 1, 50); // timeout of 50ms
+      if (ret < 0) {
+        fprintf(stderr, "poll failed: %s\n", strerror(errno));
+      } else if (ret == 0) {
+        // Timeout with no events, move on.
+      } else {
+        // Process the new event.
+        struct inotify_event event;
+        int nbytes = read(fd, &event, sizeof(event));
+        // Do what you need...
+      }
+
       int fd = inotifyData[i].fd;
       char buf[BUF_LEN];
       int num = read(fd, buf, BUF_LEN);
@@ -173,7 +176,6 @@ int main(int argc, char **argv) {
       for (char *p = buf; p < buf + num;) {
         struct inotify_event *event = (struct inotify_event *)p;
 
-        // printf("mask = %o\n", event->mask);
         if (event->mask & IN_ACCESS)
           puts("IN_ACCESS");
         else if (event->mask & IN_ATTRIB)
@@ -199,8 +201,8 @@ int main(int argc, char **argv) {
         else if (event->mask & IN_OPEN)
           puts("IN_OPEN");
         else {
-          printf(RED "Unrecognized event\n" RED);
-          exit(-1);
+          printf(RED "Unrecognized event\n" NONE);
+          printf(RED "mask = %o\n" NONE, event->mask);
         }
 
         if (event->len > 0)
@@ -212,6 +214,21 @@ int main(int argc, char **argv) {
              inotifyData[i].pathname);
     }
   }
+}
+
+int main(int argc, char **argv) {
+  if (argc != 2) {
+    printf(RED "Please supply one directory for this program to work\n" NONE);
+    return 1;
+  }
+
+  inotifyData = NULL;
+  inotifyDataIdx = inotifyDataCapacity = 0;
+
+  printf(GREEN "Will be monitoring directory %s\n\n" NONE, argv[1]);
+  listDirectory(argv[1]);
+
+  listenForInotifyEvents();
 
   return 0;
 }
