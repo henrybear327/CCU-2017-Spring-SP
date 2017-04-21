@@ -2,6 +2,9 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #define N 100000
 
@@ -23,7 +26,18 @@ void listDirectory(char* pathName)
     printf("%s:\n", pathName);
 
     DIR *dp = opendir(pathName);
+    if(dp == NULL) {
+        perror("opendir() error");
+        return;
+    }
+
     Dirent *dptr = readdir(dp);
+    if(dptr == NULL && errno != 0) {
+        perror("readdir() error");
+        return;
+    }
+
+    // print out files in the current directory
     while (dptr != NULL) {
         printFileInformation(dptr);
 
@@ -41,8 +55,6 @@ int main(int argc, char** argv)
     }
 
     printf(GREEN "Will be monitoring directory %s\n\n" NONE, argv[1]);
-    getcwd(argv[1], N);
-
     listDirectory(argv[1]);
 
     return 0;
