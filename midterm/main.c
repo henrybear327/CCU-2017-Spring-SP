@@ -187,19 +187,12 @@ void search(char *pathname, int isTopLevel)
         exit(-1);
     }
 
-    // file name list
-    int fileNameListIdx = 0;
-    char fileNameList[100][256];
-
     // directory path list
     int dirPathListIdx = 0;
     char dirPathList[100][512];
 
     // print out files in the current directory using directory entry struct
     while (dptr != NULL) {
-        // printf(CYAN "filename = %s\n" NONE, dptr->d_name); // filename
-        strcpy(fileNameList[fileNameListIdx++], dptr->d_name);
-
         // setup info for stat() to use
         char toQuerypathname[512];
         strcpy(toQuerypathname, pathname);
