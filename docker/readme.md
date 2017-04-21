@@ -4,6 +4,8 @@
 docker build -t="sp" --rm  - < Dockerfile
 docker build -t="sp" --no-cache --rm  - < Dockerfile // http://mmbash.de/blog/failed-fetch-with-docker-build-and-apt-get-update/
 
+time docker build -t sp_zsh --no-cache --rm . // for COPY to work
+
 docker ps -a
 docker images -a
 
