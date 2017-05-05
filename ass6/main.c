@@ -138,7 +138,7 @@ void listDirectory(char *pathname)
 
     // recursively go to directory
     for (int i = 0; i < dirPathListIdx; i++) {
-        printf(GREEN "Going to directory %s\n", dirPathList[i]);
+        // printf(GREEN "Going to directory %s\n", dirPathList[i]);
         listDirectory(dirPathList[i]);
     }
 
