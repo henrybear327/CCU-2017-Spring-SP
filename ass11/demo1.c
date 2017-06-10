@@ -12,8 +12,7 @@ int main(void)
 
     /* Run LS. */
     pid_t pid = fork();
-    if (pid == 0)
-    {
+    if (pid == 0) {
         /* Set stdout to the output side of the pipe, and run 'ls'. */
         dup2(filedes[1], 1);
         close(filedes[1]);
@@ -28,8 +27,7 @@ int main(void)
 
     /* Run WC. */
     pid = fork();
-    if (pid == 0)
-    {
+    if (pid == 0) {
         /* Set stdin to the input side of the pipe, and run 'wc'. */
         dup2(filedes[0], 0);
         close(filedes[0]);
@@ -43,6 +41,5 @@ int main(void)
 
     while ((corpse = waitpid(-1, &status, 0)) > 0)
         printf("PID %d died 0x%.4X\n", corpse, status);
-    return(0);
-
+    return (0);
 }

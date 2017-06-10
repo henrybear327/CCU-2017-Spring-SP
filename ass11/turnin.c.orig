@@ -21,13 +21,6 @@ int main(int argc, char **argv) {
   // fork child 1 -> cat filename -> pipe to child 2
   pid_t ret = fork();
   if (ret == 0) {
-    // child
-    // https://stackoverflow.com/questions/28507950/calling-ls-with-execv
-
-    // printf("In child\n");
-
-    // close stdout and use pipe write instead
-    // stdin, stdout, stderr -> 0, 1, 2
     dup2(pipefd[1], 1); // duplicate fd, using the lowest fd avail -> will be 1
     close(pipefd[1]);   // close stdout
     close(pipefd[0]);   // close stdout
@@ -36,9 +29,8 @@ int main(int argc, char **argv) {
                          NULL};     // need to include the program to exec
     execv(arguments[0], arguments); // remember the backslash!
   }
-  close(pipefd[1]); // ?
+  close(pipefd[1]);
 
-  // printf("In parent\n");
   int status;
   wait(&status);
 
@@ -50,11 +42,6 @@ int main(int argc, char **argv) {
 
     char *arguments[] = {"wc", NULL}; // need to include the program to exec
     execv("/usr/bin/wc", arguments);  // remember the backslash!
-
-    // char buffer[10000];
-    // while (fgets(buffer, 10000, stdin) != NULL) {
-    // printf("%s\n", buffer);
-    // }
   }
 
   return 0;
