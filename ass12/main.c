@@ -17,8 +17,8 @@ double x = (double)arc4random_uniform(RAND_MAX) / RAND_MAX;
 #define PRNG_BUFSZ 32 // pseudorandom number generator buffer size
 
 typedef struct data {
-    int count;
-    int iterations;
+    long long count;
+    long long iterations;
 } Data;
 
 void *calculate(void *arg)
@@ -26,9 +26,9 @@ void *calculate(void *arg)
 	unsigned int seed = time(NULL);
 
     Data *argument = (Data *)arg;
-	printf("iteration %d\n", argument->iterations);
+	printf("iteration %lld\n", argument->iterations);
 
-    int count = 0;
+    long long count = 0;
     for (int i = 0; i < argument->iterations; i++) {
         double x = (double) rand_r(&seed) / RAND_MAX;
 
@@ -51,12 +51,12 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    int iterations = atoi(argv[1]);
+    long long iterations = atol(argv[1]);
     int threads = atoi(argv[2]);
     printf("Iterations: %d, threads: %d\n", iterations, threads);
 
-	int orig = iterations;
-	int slice = iterations / threads;
+	long long orig = iterations;
+	long long slice = iterations / threads;
 	Data args[threads];
 	pthread_t threadPool[threads];
     for (int i = 0; i < threads; i++) {
@@ -72,7 +72,7 @@ int main(int argc, char **argv)
         pthread_join(threadPool[i], ret);
 	}
 
-    int count = 0;
+    long long count = 0;
     for (int i = 0; i < threads; i++) {
         count += args[i].count;
     }
