@@ -19,24 +19,20 @@ double x = (double)arc4random_uniform(RAND_MAX) / RAND_MAX;
 typedef struct data {
     int count;
     int iterations;
-    struct random_data *rand_state;
-    char *rand_statebuf;
 } Data;
 
 void *calculate(void *arg)
 {
+	unsigned int seed = time(NULL);
+
     Data *argument = (Data *)arg;
 	printf("iteration %d\n", argument->iterations);
 
     int count = 0;
     for (int i = 0; i < argument->iterations; i++) {
-        int res;
+        double x = (double) rand_r(&seed) / RAND_MAX;
 
-        random_r(argument->rand_state, &res);
-        double x = (double)res / RAND_MAX;
-
-        random_r(argument->rand_state, &res);
-        double y = (double)res / RAND_MAX;
+        double y = (double) rand_r(&seed) / RAND_MAX;
 
         double z = x * x + y * y;
         if (z <= 1.0)
@@ -59,24 +55,12 @@ int main(int argc, char **argv)
     int threads = atoi(argv[2]);
     printf("Iterations: %d, threads: %d\n", iterations, threads);
 
-    struct random_data *rand_states =
-        (struct random_data *)calloc(threads, sizeof(struct random_data));
-    char *rand_statebufs = (char *)calloc(threads, PRNG_BUFSZ);
-
-	for(int i = 0; i < threads; i++) {
-    	initstate_r(random(), &rand_statebufs[i], PRNG_BUFSZ, &rand_states[i]);
-	}
-
-    pthread_t threadPool[threads];
-    Data args[threads];
-	
 	int orig = iterations;
 	int slice = iterations / threads;
+	Data args[threads];
+	pthread_t threadPool[threads];
     for (int i = 0; i < threads; i++) {
         args[i].iterations = (i == threads - 1 ? iterations : slice);
-        args[i].count = 0;
-        args[i].rand_state = &rand_states[i];
-        args[i].rand_statebuf = &rand_statebufs[i];
 
         pthread_create(&threadPool[i], NULL, calculate, (void *)&args[i]);
 
