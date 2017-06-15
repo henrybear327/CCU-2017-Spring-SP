@@ -53,7 +53,7 @@ int main(int argc, char **argv)
 
     long long iterations = atol(argv[1]);
     int threads = atoi(argv[2]);
-    printf("Iterations: %d, threads: %d\n", iterations, threads);
+    printf("Iterations: %lld, threads: %d\n", iterations, threads);
 
 	long long orig = iterations;
 	long long slice = iterations / threads;
