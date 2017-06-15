@@ -26,9 +26,7 @@ typedef struct data {
 void *calculate(void *arg)
 {
     Data *argument = (Data *)arg;
-
-    initstate_r(random(), argument->rand_statebuf, PRNG_BUFSZ,
-                argument->rand_state);
+	printf("iteration %d\n", argument->iterations);
 
     int count = 0;
     for (int i = 0; i < argument->iterations; i++) {
@@ -64,6 +62,10 @@ int main(int argc, char **argv)
     struct random_data *rand_states =
         (struct random_data *)calloc(threads, sizeof(struct random_data));
     char *rand_statebufs = (char *)calloc(threads, PRNG_BUFSZ);
+
+	for(int i = 0; i < threads; i++) {
+    	initstate_r(random(), &rand_statebufs[i], PRNG_BUFSZ, &rand_states[i]);
+	}
 
     pthread_t threadPool[threads];
     Data args[threads];
