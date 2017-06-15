@@ -67,24 +67,31 @@ int main(int argc, char **argv)
 
     pthread_t threadPool[threads];
     Data args[threads];
+	
+	int orig = iterations;
+	int slice = iterations / threads;
     for (int i = 0; i < threads; i++) {
-        args[i].iterations = iterations;
+        args[i].iterations = (i == threads - 1 ? iterations : slice);
         args[i].count = 0;
         args[i].rand_state = &rand_states[i];
         args[i].rand_statebuf = &rand_statebufs[i];
 
         pthread_create(&threadPool[i], NULL, calculate, (void *)&args[i]);
 
+		iterations -= slice;
+    }
+
+	for(int i = 0; i < threads; i++) {
         void *ret = NULL;
         pthread_join(threadPool[i], ret);
-    }
+	}
 
     int count = 0;
     for (int i = 0; i < threads; i++) {
         count += args[i].count;
     }
 
-    double pi = (double)count / (iterations * threads) * 4;
+    double pi = (double)count / orig * 4;
     printf("Estimate of pi is %.15f.\nError = %e\n", pi,
            (acos(-1) - pi) / acos(-1));
 }
