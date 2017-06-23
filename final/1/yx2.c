@@ -46,6 +46,8 @@ void *calculate(void *arg)
            data->iterations);
 
     ll base = (randomPoints / 100000 / threads);
+    base = base < 1 ? 1 : base;
+
     ll threshold = 0;
     for (ll i = 0; i < data->iterations; i++) {
         // 14 8 6

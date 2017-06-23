@@ -1,9 +1,54 @@
 1.1
 
-同步機制
+[同步機制]
 
+沒有使用同步機制。
 
+man page 有提到 pthread_create 函數 可以利用最後一個參數 (void *arg)
+傳送 argument 給 void *(*start_routine) (void *)
+int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
+                          void *(*start_routine) (void *), void *arg);
 
-隨機點
+所以我的做法是，對於每個 thread，我都傳送一個 struct data 參數。
+typedef struct data {
+    int index;
+    int inside;
+    int currentIteration;
+    ll iterations;
+} Data;
+
+這樣一來，對於每一個thread，都擁有他們各自的
+index (第幾個 thread)
+inside （隨機點落在灰色面積內的總數）
+currentIteration (目前準備產生第幾個隨機點)
+iterations (這個 thread 需要產生的總隨機點個數)
+
+因為是使用 pointer 將 struct data 傳入 thread 中，所以計算結果在 thread 結束時會被保留。
+
+因此，全部的 thread 都結束後，再對每個 thread 的 struct data 一一加總即可 -> 不用同步
+
+[隨機點]
 
 1.2
+
+
+[同步問題]
+
+沒有使用同步機制。
+
+因為顯示完成度的位數只到小數點下三位，所以對於每個thread，
+在 總iteration數 / 100000 / threads數 個隨機點被產生後，我才更新一次currentIteration。
+
+總iteration數 / 100000 / threads數 的理由是，每次都更新currentIteration沒有意義，畢竟
+只顯示到小數點下三位的完成度，只產生一兩個點對於完成度的顯示完全不會有影響。所以，
+在至少產生 總iteration數 / 100000 / threads數 點後才更新 currentIteration，效能上比較沒有影響外，
+對於的結果也不會有 delay 的問題。
+
+那也因為每個 thread 各自更新自己的 struct data 中的 currentIteration ，所以沒有同步問題。
+
+[如何做到這個功能]
+
+利用 signal(SIGTSTP, sighandler) 攔截下 control-z 訊號，並在 sighandler 寫下計算的代碼。
+
+signal 進來時，sighandler 就會對於所有 struct data 中的
+currentIteration 進行加總 除上 總共需要產生的點數 乘以 100，這樣即可獲得目前的完成度百分比。
