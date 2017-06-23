@@ -15,7 +15,7 @@
 int main(int argc, char **argv)
 {
     if (argc != 5) {
-        printf(RED "Please apply prog1 arg1 prog2 arg2\n" RESET);
+        printf(RED "Please supply prog1 arg1 prog2 arg2\n" RESET);
         return 0;
     }
 
