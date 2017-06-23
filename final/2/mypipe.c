@@ -1,0 +1,63 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+#define RED "\x1B[31m"
+#define GREEN "\x1B[32m"
+#define YELLOW "\x1B[33m"
+#define BLUE "\x1B[34m"
+#define CYAN "\x1B[36m"
+#define WHITE "\x1B[37m"
+#define RESET "\x1B[0m"
+
+int main(int argc, char **argv)
+{
+    if (argc != 5) {
+        printf(RED "Please apply prog1 arg1 prog2 arg2\n" RESET);
+        return 0;
+    }
+
+    char *prog1 = argv[1];
+    char *arg1 = argv[2];
+    char *prog2 = argv[3];
+    char *arg2 = argv[4];
+
+    printf(CYAN "Arguments: %s %s %s %s\n" RESET, prog1, arg1, prog2, arg2);
+
+    // create pipe
+    int pipefd[2]; // 0 - read, 1 - write
+    pipe(pipefd);
+
+    // fork child 1b
+    pid_t ret = fork();
+    if (ret == 0) {
+        dup2(pipefd[1], 1); // duplicate fd, using the lowest fd avail -> will be 1
+        close(pipefd[1]);   // close stdout
+        close(pipefd[0]);   // close stdin
+
+        char *arguments[] = {prog1, arg1,
+                             NULL
+                            };      // need to include the program to exec
+        execvp(arguments[0], arguments); // remember the backslash!
+    }
+    close(pipefd[1]);
+
+    int status;
+    wait(&status);
+
+    // fork child 2
+    pid_t ret2 = fork();
+    if (ret2 == 0) {
+        dup2(pipefd[0], 0);
+        close(pipefd[0]);
+
+        char *arguments[] = {prog2, arg2,
+                             NULL
+                            };      // need to include the program to exec
+        execvp(arguments[0], arguments); // remember the backslash!
+    }
+
+    return 0;
+}
