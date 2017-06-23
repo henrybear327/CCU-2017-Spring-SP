@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -14,31 +15,43 @@
 #define WHITE "\x1B[37m"
 #define RESET "\x1B[0m"
 
-/*
-integrate x^2 from 0 to 8
+typedef long long ll;
 
-x^3 / 3
-8^3 / 3 = 170
-*/
+#define TIMES 10000
+#define MAX_X (8 * TIMES)
+#define MAX_Y (64 * TIMES)
+
+typedef struct data {
+    int index;
+    int inside;
+    ll iterations;
+} Data;
 
 double val(double x)
 {
     return x * x;
 }
 
-#define TIMES 10000
-#define MAX_X (8 * TIMES)
-#define MAX_Y (64 * TIMES)
-
-void gen(int *inside)
+void *calculate(void *arg)
 {
-    double x = rand() % MAX_X;
-    x /= TIMES;
-    double y = rand() % MAX_Y;
-    y /= TIMES;
+    Data *data = (Data *)arg;
+    unsigned int seed = time(NULL);
+    printf(GREEN "Thread %d starts with %lld iterations\n" RESET, data->index,
+           data->iterations);
 
-    if (y <= val(x))
-        (*inside)++;
+    for (ll i = 0; i < data->iterations; i++) {
+        int r = rand_r(&seed);
+        double x = r % MAX_X;
+        x /= TIMES;
+        double y = r % MAX_Y;
+        y /= TIMES;
+
+        if (y <= val(x))
+            (data->inside)++;
+    }
+
+    printf(GREEN "Thread %d ends\n" RESET, data->index);
+    return NULL;
 }
 
 int main(int argc, char **argv)
@@ -48,21 +61,43 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    srand(time(NULL));
-
-    int randomPoints = atoi(argv[1]);
+    ll randomPoints = atol(argv[1]);
     int threads = atoi(argv[2]);
-    int inside = 0;
+    printf(CYAN "Arguments: %lld %d\n" RESET, randomPoints, threads);
 
-    printf(CYAN "Arguments: %d %d\n" RESET, randomPoints, threads);
+    Data args[threads];
+    pthread_t threadPool[threads];
+    ll iterations = randomPoints;
+    for (ll i = 0; i < threads; i++) {
+        assert(iterations != 0);
 
-    inside = 0;
-    for (int i = 0; i < randomPoints; i++) {
-        gen(&inside);
+        args[i].index = i;
+        args[i].inside = 0;
+        if (i == threads - 1) {
+            args[i].iterations = iterations;
+            iterations = 0;
+        } else {
+            args[i].iterations = randomPoints / threads;
+            iterations -= randomPoints / threads;
+        }
+
+        pthread_create(&threadPool[i], NULL, calculate, (void *)&args[i]);
     }
 
-    printf("%.15f%%\n", ((double)inside / (double)randomPoints)); // 33.2%
-    printf("%.15f\n", 8.0 * 64.0 * ((double)inside / (double)randomPoints));
+    for (int i = 0; i < threads; i++) {
+        void *ret = NULL;
+        pthread_join(threadPool[i], ret);
+
+        printf(GREEN "Thread %d joined\n" RESET, i);
+    }
+
+    int total = 0;
+    for (int i = 0; i < threads; i++) {
+        total += args[i].inside;
+    }
+
+    printf("%.15f%%\n", ((double)total / (double)randomPoints)); // 33.2%
+    printf("%.15f\n", 8.0 * 64.0 * ((double)total / (double)randomPoints));
 
     return 0;
 }
