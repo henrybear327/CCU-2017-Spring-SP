@@ -3,3 +3,5 @@
 make all: 編譯
 
 make test: 執行範例測試 ./mypipe cat mypipe.c wc -c
+
+基本上先 fork ，再利用 dup2 和 execvp 即可完成工作。

@@ -1,3 +1,5 @@
+make all 即可以進行編譯
+
 1.1
 
 [同步機制]
@@ -19,18 +21,33 @@ typedef struct data {
 
 這樣一來，對於每一個thread，都擁有他們各自的
 index (第幾個 thread)
-inside （隨機點落在灰色面積內的總數）
-currentIteration (目前準備產生第幾個隨機點)
+inside （這個 thread 目前算出的隨機點落在灰色面積內的總數）
+currentIteration (這個 thread 目前準備產生第幾個隨機點)
 iterations (這個 thread 需要產生的總隨機點個數)
 
 因為是使用 pointer 將 struct data 傳入 thread 中，所以計算結果在 thread 結束時會被保留。
 
-因此，全部的 thread 都結束後，再對每個 thread 的 struct data 一一加總即可 -> 不用同步
+因此，全部的 thread 都結束後，再對每個 thread 的 struct data 一一加總即可。
+
+結論: 不用處理同步問題。
 
 [隨機點]
 
-1.2
+利用 rand_r。
 
+在每個 thread 剛剛開始時，先 unsigned int seed = time(NULL);。之後，利用rand_r(&seed)
+即可以產生亂數。
+
+對於產生的亂數，對 MAX_X, MAX_Y 取餘數。因為要產生非整數的點，所以 MAX_X 我設定 8 * 10000，
+MAX_Y 我設定 64 * 10000，也因此，取完餘數後 的 x y 直都要除以 10000。
+
+int r = rand_r(&seed);
+double x = r % MAX_X;
+x /= TIMES;
+double y = r % MAX_Y;
+y /= TIMES;
+
+1.2
 
 [同步問題]
 
@@ -50,5 +67,6 @@ iterations (這個 thread 需要產生的總隨機點個數)
 
 利用 signal(SIGTSTP, sighandler) 攔截下 control-z 訊號，並在 sighandler 寫下計算的代碼。
 
-signal 進來時，sighandler 就會對於所有 struct data 中的
-currentIteration 進行加總 除上 總共需要產生的點數 乘以 100，這樣即可獲得目前的完成度百分比。
+signal 進來時，sighandler 就會
+對於所有 struct data 中的 currentIteration 進行加總 除上 總共需要產生的點數 乘以 100，
+這樣即可獲得目前的完成度百分比。

@@ -75,12 +75,14 @@ void sighandler(int signumber)
     // sys_siglist[signumber]);
 
     int total = 0;
+    int insideTotal = 0;
     for (int i = 0; i < threads; i++) {
         total += args->currentIteration;
+        insideTotal += args->inside;
     }
 
-    printf(BLUE "Finished %.3f%% of the work\n" RESET,
-           (100.0 * (double)total / (double)randomPoints)); // 33.2%
+    printf(BLUE "Finished %4.3f%% of the work. Points inside = %10d\n" RESET,
+           (100.0 * (double)total / (double)randomPoints), insideTotal); // 33.2%
 }
 
 int main(int argc, char **argv)
