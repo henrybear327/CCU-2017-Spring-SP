@@ -24,18 +24,31 @@ typedef long long ll;
 typedef struct data {
   int index;
   int inside;
+  int currentIteration;
   ll iterations;
 } Data;
+
+ll randomPoints;
+int threads;
+Data *args;
 
 double val(double x) { return x * x; }
 
 void *calculate(void *arg) {
   Data *data = (Data *)arg;
+  data->currentIteration = 0;
   unsigned int seed = time(NULL);
   printf(GREEN "Thread %d starts with %lld iterations\n" RESET, data->index,
          data->iterations);
 
+  ll base = (randomPoints / 100000 / threads);
+  ll threshold = 0;
   for (ll i = 0; i < data->iterations; i++) {
+    // 14 8 6
+    if (i > threshold) {
+      data->currentIteration = i;
+      threshold += base;
+    }
     int r = rand_r(&seed);
     double x = r % MAX_X;
     x /= TIMES;
@@ -50,17 +63,34 @@ void *calculate(void *arg) {
   return NULL;
 }
 
+void sighandler(int signumber) {
+  // printf("get a signal named '%d', '%s'\n", signumber,
+  // sys_siglist[signumber]);
+
+  int total = 0;
+  for (int i = 0; i < threads; i++) {
+    total += args->currentIteration;
+  }
+
+  printf(BLUE "Finished %.3f%% of the work\n" RESET,
+         (100.0 * (double)total / (double)randomPoints)); // 33.2%
+}
+
 int main(int argc, char **argv) {
   if (argc != 3) {
     printf(RED "Please supply [random points] [threads]\n" RESET);
     return 0;
   }
 
-  ll randomPoints = atol(argv[1]);
-  int threads = atoi(argv[2]);
+  if (signal(SIGTSTP, sighandler) != SIG_ERR) {
+    printf(CYAN "Signal registered\n" RESET);
+  }
+
+  randomPoints = atol(argv[1]);
+  threads = atoi(argv[2]);
   printf(CYAN "Arguments: %lld %d\n" RESET, randomPoints, threads);
 
-  Data args[threads];
+  args = (Data *)malloc(sizeof(Data) * threads);
   pthread_t threadPool[threads];
   ll iterations = randomPoints;
   for (ll i = 0; i < threads; i++) {
